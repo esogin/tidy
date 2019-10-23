@@ -1,0 +1,65 @@
+---
+title: "Tidy_Tuesday_Oct22"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+Set up working space
+```{r}
+rm(list = ls())
+```
+
+```{r}
+library(ggplot2)
+library(tidyr)
+```
+
+Get the data
+```{r}
+horror_movies <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-10-22/horror_movies.csv")
+df<-horror_movies
+```
+
+```{r}
+head(df)
+```
+
+Does review rating correpond to budget spent? 
+
+data wrangling
+```{r}
+# subset data so only get values that we have
+df.sub<-df[complete.cases(df$review_rating),]
+df.sub<-df.sub[complete.cases(df.sub$budget),]
+head(df.sub)
+
+#budgets are in dolars, euros and pounds, lets only look at values in $
+dfsub2<-df.sub[grep("\\$",df.sub$budget),]
+head(dfsub2); dim(dfsub2) # 847 movies
+dfsub2$dollars<-gsub('\\$','',dfsub2$budget) # use reexpressions to reformat values 
+dfsub2$dollars<-as.numeric(gsub(',','',dfsub2$dollars))
+range(dfsub2$dollars)
+```
+```{r}
+#split filiming locations 
+head(dfsub2)
+```
+
+
+# Visualize results
+```{r}
+head(dfsub2)
+```
+```{r}
+ggplot(dfsub2, aes(x=log(dollars), y=review_rating)) + geom_point(alpha=0.75) + geom_smooth(method = 'auto')+ ylab('review rates') + xlab('dollars')
+```
+```{r}
+ggsave('my_first_tidyTuesday.pdf')
+```
+
+
+
+
+
+
+
