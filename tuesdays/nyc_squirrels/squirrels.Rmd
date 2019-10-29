@@ -1,6 +1,9 @@
 ---
 title: "NYC-Squirrels Cencus"
-output: html_notebook
+output:
+  pdf_document: default
+  html_notebook: default
+date: "October 29, 2019"
 ---
 
 ```{r}
@@ -9,8 +12,9 @@ rm(list=ls())
 
 ```{r}
 library(ggplot2)
-library(tidyr)
+library(tidyverse)
 library(circlize)
+library(viridis)
 library(chorddiag)
 ```
 
@@ -23,7 +27,7 @@ dim(nyc_squirrels)
 ```
 create data table of behaviors by hector and shift
 ```{r}
-behavior<-nyc_squirrels %>% group_by(shift) %>% summarize(Running=sum(running, na.rm=T),Eating=sum(eating, na.rm=T),Chasing=sum(chasing, na.rm=T), Climbing=sum(climbing, na.rm=T),Foraging=sum(foraging, na.rm=T) )
+behavior<-nyc_squirrels %>% group_by(shift) %>%  summarize(Running=sum(running, na.rm=T),Eating=sum(eating, na.rm=T),Chasing=sum(chasing, na.rm=T), Climbing=sum(climbing, na.rm=T),Foraging=sum(foraging, na.rm=T) )
 behavior.long<-gather(data=behavior, key='behavior', value='count',gather_cols=c(Running, Eating, Chasing, Foraging, Climbing))
 behavior.long$count<-as.numeric(behavior.long$count)
 ```
@@ -31,7 +35,7 @@ behavior.long$count<-as.numeric(behavior.long$count)
 Chord diagram
 ```{r}
 # parameters
-pdf('squirrel_behavoir.pdf',height=5, width=5)
+#pdf('squirrel_behavoir.pdf',height=5, width=5)
 circos.clear()
 circos.par(start.degree = 90, gap.degree = 1, track.margin = c(-0.2, 0.2), points.overflow.warning = FALSE)
 par(mar = rep(1, 4))
@@ -80,7 +84,7 @@ circos.trackPlotRegion(
   }
 )
 title(main='The behavior of squirrels in central park')
-dev.off()
+#dev.off()
 ```
 
 
