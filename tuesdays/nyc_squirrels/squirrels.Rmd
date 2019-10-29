@@ -35,7 +35,7 @@ behavior.long$count<-as.numeric(behavior.long$count)
 Chord diagram
 ```{r}
 # parameters
-#pdf('squirrel_behavoir.pdf',height=5, width=5)
+jpeg('squirrel_behavoir.jpeg')
 circos.clear()
 circos.par(start.degree = 90, gap.degree = 1, track.margin = c(-0.2, 0.2), points.overflow.warning = FALSE)
 par(mar = rep(1, 4))
@@ -84,7 +84,7 @@ circos.trackPlotRegion(
   }
 )
 title(main='The behavior of squirrels in central park')
-#dev.off()
+dev.off()
 ```
 
 
