@@ -1,0 +1,46 @@
+---
+title: "R Notebook - NZ Birds"
+output: html_notebook
+---
+
+Set up working space
+```{r}
+rm(list = ls())
+```
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+```
+
+
+```{r}
+nz_bird <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-11-19/nz_bird.csv")
+head(nz_bird); dim(nz_bird)
+```
+vote rank: 1 is highest, 5 is lowest
+
+# Data cleaning
+```{r}
+unique(nz_bird$bird_breed)
+```
+
+```{r}
+# remove NAs
+nz<-nz_bird[complete.cases(nz_bird),]
+
+#split the vote rank
+nz<-data.frame(nz %>% separate(vote_rank,c('vote','rank'),sep='_'))
+
+# turn date + hour into a postx object, I even specified the time zone right!
+nz$date_time<-as.POSIXct(strptime(paste(nz$date, nz$hour), format="%Y-%m-%d %H", tz="NZ"))
+
+# turn rank into numeric value
+nz$rank<-as.numeric(nz$rank)
+
+head(nz)
+```
+```{r}
+ggplot(nz, aes(x=bird_breed, y=rank)) + geom_boxplot()
+```
+

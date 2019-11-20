@@ -27,18 +27,19 @@ dim(nyc_squirrels)
 ```
 create data table of behaviors by hector and shift
 ```{r}
-behavior<-nyc_squirrels %>% group_by(shift) %>%  summarize(Running=sum(running, na.rm=T),Eating=sum(eating, na.rm=T),Chasing=sum(chasing, na.rm=T), Climbing=sum(climbing, na.rm=T),Foraging=sum(foraging, na.rm=T) )
+behavior<-nyc_squirrels %>% group_by(shift) %>%  summarize(Running=sum(running, na.rm=T),Chasing=sum(chasing, na.rm=T),Climbing=sum(climbing, na.rm=T),Eating=sum(eating, na.rm=T),Foraging=sum(foraging, na.rm=T))
 behavior.long<-gather(data=behavior, key='behavior', value='count',gather_cols=c(Running, Eating, Chasing, Foraging, Climbing))
 behavior.long$count<-as.numeric(behavior.long$count)
+behavior.long$behavior<-factor(behavior.long$behavior, ordered=T, levels  =c('Foraging','Eating','Climbing','Chasing','Running'))
 ```
 
 Chord diagram
 ```{r}
 # parameters
-jpeg('squirrel_behavoir.jpeg')
+#jpeg('squirrel_behavoir.jpeg')
 circos.clear()
 circos.par(start.degree = 90, gap.degree = 1, track.margin = c(-0.2, 0.2), points.overflow.warning = FALSE)
-par(mar = rep(1, 4))
+par(mar = rep(2, 4))
 
 # color palette
 mycolor <- viridis(20, alpha = 1, begin = 0, end = 1, option = "D")
@@ -53,9 +54,7 @@ chordDiagram(x=behavior.long,
   diffHeight  = -0.04,
   annotationTrack = "grid", 
   annotationTrackHeight = c(0.05, 0.1),
-  link.arr.type = "big.arrow", 
-  link.sort = TRUE, 
-  link.largest.ontop = TRUE)
+  link.arr.type = "big.arrow",self.link = 2)
 
 # Add text and axis
 circos.trackPlotRegion(
@@ -72,19 +71,19 @@ circos.trackPlotRegion(
       y = 4.5, 
       labels = sector.index, 
       facing = "bending", 
-      cex = 1
+      cex = .75
     )
       # Add graduation on axis
     circos.axis(
       h = "top", 
       major.at = seq(from = 0, to = xlim[2], by = 250), 
       minor.ticks = 1, 
-      major.tick.percentage = 0.5,labels.cex = 0.7,
+      major.tick.percentage = 0.5,labels.cex = 0.6,
       labels.niceFacing = FALSE)
   }
 )
 title(main='The behavior of squirrels in central park')
-dev.off()
+#dev.off()
 ```
 
 
