@@ -1,0 +1,134 @@
+---
+title: 'R Notebook - Plotting in R workshop -  Food Consumption '
+output:
+  html_document:
+    df_print: paged
+---
+
+
+# set up space
+Give description 
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+```
+
+```{r}
+food_consumption <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-02-18/food_consumption.csv')
+```
+
+```{r}
+head(food_consumption)
+```
+```{r}
+unique(food_consumption$country)
+```
+```{r}
+unique(food_consumption$food_category)
+```
+
+Type of food vs CO2 consumption ?
+Which food is the worst for carbon foot  print?
+Carbon emission per continent?
+Which countries emitt the most Co2?
+is consumption related to Co2 emissions?
+type of food consumption per country?
+```{r}
+grouped_summaries<-food_consumption %>% group_by(country) %>% summarize(sum_consumption=sum(consumption), stdev=sd(consumption))
+head(grouped_summaries)
+```
+
+```{r}
+head(food_consumption)
+```
+```{r}
+long<-food_consumption %>% gather(key='variable',value='value',-country,-food_category)
+long
+```
+
+```{r}
+long %>% filter(variable=='consumption') %>% top_n(n=3)
+```
+
+
+```{r}
+tail(long[grep('consumption',long$variable),])
+```
+```{r}
+group_summaries<-long %>% group_by(country) %>% filter(variable=='consumption') %>% summarise(sum_consumption=sum(value),max_value=max(value), stdev=sd(value),median_value=median(value))
+group_summaries
+```
+
+```{r}
+top_countries<-group_summaries %>% group_by(country) %>% top_n(sum_consumption, n=1)
+top_countries
+```
+```{r}
+head(group_summaries)
+```
+
+
+```{r}
+top_countries<-group_summaries %>% arrange(desc(sum_consumption)) %>% top_n(5)
+top_countries
+group_summaries[order(group_summaries$sum_consumption,decreasing = T),]
+```
+```{r}
+head(food_consumption)
+```
+
+```{r}
+lookup<-data.frame(cat=unique(food_consumption$food_category),shape=c(1:11))
+lookup
+
+cat<-unique(food_consumption$food_category
+vals<-RColorBrewer::brewer.pal(11,'Spectral')
+names(vals)<-cat
+vals
+```
+```{r}
+theme_new<-theme_classic() + theme(axis.text = element_text(size=12,face = 'italic'),panel.border  = element_rect(color='black', fill=NA) )
+
+theme_classic()
+```
+
+
+
+```{r}
+myplot<-ggplot(food_consumption) +
+       geom_point(aes(x=consumption, y=co2_emmission,color=co2_emmission,size=co2_emmission)) + 
+      theme_new
+myplot
+```
+
+
+```{r}
+library(patchwork)
+
+#myplot / myplot2 + plot_spacer() + plot_layout(heights = c(0.5,1,1)) + plot_annotation(tag_levels = 'A')
+
+(myplot + myplot2)/myplot2
+```
+
+
+
+
+
+
+## Diamonds
+```{r}
+data('diamonds')
+head(diamonds)
+```
+
+
+```{r}
+#ggplot(data=diamonds, aes(x=color, y=price)) + geom_point() + geom_boxplot()
+myplot2<-ggplot(data=diamonds, aes(x=color,y=price)) + geom_bar(stat='identity') + theme(rect = element_rect(fill='blue'))
+myplot2
+```
+
+
+
+
