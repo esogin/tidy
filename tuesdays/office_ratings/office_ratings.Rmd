@@ -74,7 +74,7 @@ neg<-office_analyze %>%
     group_by(episode_name,season.x,episode.x,imdb_rating) %>% count() %>% 
     ggplot(aes(x=n, y=imdb_rating,fill=season.x)) + geom_point(shape=21,size=3) + theme_classic() + ylab('IMDB Rating') + xlab('Nr. negative words in episode') + xlim(c(0,300)) + scale_fill_manual(values=pal,name='Office Season')
 
-pos + neg + plot_annotation(title='IMDB ratings of the Office are not impacted by word sentiment',subtitle='but more positive words are used then negative ones') + ggsave('office_ratings_vs_word_sentiment.pdf',width=6,height=3) + plot_layout(guides = 'collect') 
+pos + neg + plot_annotation(title='IMDB ratings of the Office are not impacted by word sentiment',subtitle='but more positive words are used then negative ones') + plot_layout(guides = 'collect') + ggsave('office_ratings_vs_word_sentiment.jpg',width=7,height=4) 
 
 ```
 

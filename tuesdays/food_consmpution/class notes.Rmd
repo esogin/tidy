@@ -113,9 +113,6 @@ library(patchwork)
 
 
 
-
-
-
 ## Diamonds
 ```{r}
 data('diamonds')
