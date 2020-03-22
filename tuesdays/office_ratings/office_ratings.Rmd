@@ -1,0 +1,86 @@
+---
+title: "The_Office"
+output: html_document
+---
+
+
+# Set up working space
+```{r}
+rm(list=ls())
+```
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+library(patchwork)
+library(tidytext)
+library(schrute)
+```
+
+```{r}
+office_ratings <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-03-17/office_ratings.csv')
+```
+data for text mining
+```{r}
+office_text <- schrute::theoffice
+```
+
+# Explore data
+```{r}
+head(office_ratings)
+tail(office_ratings)
+```
+
+```{r}
+head(office_text)
+```
+
+join together datasets and select columns of interest
+```{r}
+office_analyze<-full_join(office_text, office_ratings, by=c('episode_name'='title')) %>% select(season.x, episode.x,episode_name,text,imdb_rating)
+head(office_analyze)
+```
+
+#manipulate data
+```{r}
+pal<-c('#fff7fb',
+'#ece2f0',
+'#d0d1e6',
+'#a6bddb',
+'#67a9cf',
+'#3690c0',
+'#02818a',
+'#016c59',
+'#014636')
+```
+
+
+
+text wrangling and tidytext 
+```{r}
+positive<-get_sentiments('bing') %>% filter(sentiment == "positive")
+negative<-get_sentiments('bing') %>% filter(sentiment == "negative")
+
+# positive 
+pos<-office_analyze %>% 
+    unnest_tokens(word,text) %>% 
+    anti_join(get_stopwords()) %>% semi_join(positive) %>% 
+    group_by(episode_name,season.x,episode.x,imdb_rating) %>% count() %>%
+    ggplot(aes(x=n, y=imdb_rating,fill=season.x)) + geom_point(shape=21,size=3) + theme_classic() + ylab('IMDB Rating') + xlab('Nr. positive words in episode')+ xlim(c(0,300))+ scale_fill_manual(values=pal,name='Office Season')
+
+neg<-office_analyze %>% 
+    unnest_tokens(word,text) %>% 
+    anti_join(get_stopwords()) %>% semi_join(negative) %>% 
+    group_by(episode_name,season.x,episode.x,imdb_rating) %>% count() %>% 
+    ggplot(aes(x=n, y=imdb_rating,fill=season.x)) + geom_point(shape=21,size=3) + theme_classic() + ylab('IMDB Rating') + xlab('Nr. negative words in episode') + xlim(c(0,300)) + scale_fill_manual(values=pal,name='Office Season')
+
+pos + neg + plot_annotation(title='IMDB ratings of the Office are not impacted by word sentiment',subtitle='but more positive words are used then negative ones') + ggsave('office_ratings_vs_word_sentiment.pdf',width=6,height=3) + plot_layout(guides = 'collect') 
+
+```
+
+
+
+
+
+
+
