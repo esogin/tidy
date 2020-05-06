@@ -1,0 +1,201 @@
+---
+title: "R Notebook"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+```{r}
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(patchwork)
+library(ggraph)
+library(tidygraph)
+library(ggthemes)
+library(RColorBrewer)
+library(igraph)
+```
+
+```{r}
+villagers <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-05-05/villagers.csv')
+```
+
+
+
+goal: draw a sankey diagram to show how gender, species and personality are connected
+```{r}
+# need to set up dataframe with sources and targets
+# levels gender --> personality --> species 
+head(villagers)
+unique(villagers$species)
+```
+add in a new types of column with a category for type of species
+```{r}
+villagers<-villagers %>% 
+          mutate(species_type='mammal') %>% 
+          mutate(species_type=ifelse(species %in% c('bird','eagle','penguin','chicken','duck','ostrich'),yes='bird',no=species_type)) %>% 
+          mutate(species_type=ifelse(species %in% c('octopus'),yes='invert',no=species_type)) %>% 
+         mutate(species_type=ifelse(species %in% c('alligator'),yes='reptile',no=species_type)) %>% 
+        mutate(species_type=ifelse(species %in% c('frog'),yes='amphibian',no=species_type)) 
+head(villagers)
+```
+
+
+create graph
+```{r}
+#set up node levels
+node_0<- villagers %>% 
+          mutate(name='villagers') %>% 
+          group_by(name) %>% 
+          summarize(size=n()) %>% 
+          mutate(shortname='villagers')  %>% 
+          mutate(type='root') 
+
+node_1<- villagers %>% 
+          mutate(name=paste('villagers',gender,sep='.')) %>% 
+          group_by(name) %>% 
+          summarize(size=n()) %>% 
+          mutate(shortname=gsub('villagers.','',name)) %>% 
+          mutate(type='gender') 
+
+node_2<- villagers %>% 
+          mutate(name=paste('villagers',gender,personality,sep='.')) %>% 
+          group_by(name) %>% 
+          summarize(size=n()) %>% 
+          mutate(shortname=gsub('villagers\\.[a-z]*\\.','',name)) %>% 
+          mutate(type='personality') 
+          
+ node_3<- villagers %>% 
+          mutate(name=paste('villagers',gender,personality,species_type,sep='.')) %>% 
+          group_by(name) %>% 
+          summarize(size=n()) %>% 
+          mutate(temp=name) %>% 
+          separate(temp,into=c('rm1','rm2','rm3','shortname'),sep='\\.',) %>% 
+          select(name,size,shortname) %>% 
+          mutate(type='species')
+ 
+nodes<-bind_rows(node_0,node_1,node_2,node_3)  
+head(nodes)
+```
+Add node info for labels
+```{r}
+nodes <- nodes %>% 
+        mutate(label='') %>% 
+        mutate(label=ifelse(type %in% c('root','gender','personality'),yes=shortname,no=label))
+nodes
+```
+
+
+
+
+Set up edges
+```{r}
+#edges to and from directions 
+#gender to personality 
+#personality to gender
+
+edges_0<-villagers %>% 
+          select(gender) %>% 
+          mutate(to='villagers')  %>% 
+          mutate(from=paste('villagers',gender,sep='.')) %>% 
+          unique() %>%  
+          select(to,from)
+
+edges_1<-villagers %>% 
+          select(gender,personality) %>% 
+          mutate(to=paste('villagers',gender,sep='.'))  %>% 
+          mutate(from=paste('villagers',gender,personality,sep='.')) %>% 
+          unique() %>%  
+          select(to,from)
+
+edges_2<-villagers %>% 
+          select(gender,personality,species_type) %>% 
+          mutate(to=paste('villagers',gender,personality,sep='.'))  %>% 
+          mutate(from=paste('villagers',gender,personality,species_type,sep='.')) %>% 
+          unique() %>%  
+          select(to,from)
+edges<-data.frame(bind_rows(edges_0,edges_1,edges_2))
+head(edges)
+```
+
+
+
+```{r}
+gr<-graph_from_data_frame(edges,vertices=nodes)
+
+#set up unique color pallet with different tones for different levels
+cols<-c('black','gray','gray50',
+        brewer.pal(length(unique(nodes$shortname[nodes$type=='personality'])),'BuPu'),
+        brewer.pal(length(unique(nodes$shortname[nodes$type=='species'])),'YlGnBu'))
+names(cols)<-unique(nodes$shortname)
+```
+
+
+
+```{r}
+p1<-ggraph(gr, 'treemap') + 
+    geom_edge_link(color='black') + 
+    geom_node_point(aes(fill = shortname,shape=type,size=4)) + 
+    scale_fill_manual(name='',breaks=c('amphibian','bird','invert','mammal','reptile'),values=cols) +
+    scale_shape_manual(values=c(8,24,22,21)) + 
+    theme_economist() + 
+    geom_node_label(aes(label=label),repel = T,label.size=0.5,show.legend = NA) + guides(size=F,shape=F,fill=guide_legend(override.aes = list(shape=21,size=4))) +
+    ggtitle('Treemap') 
+p1
+```
+```{r}
+p2<-ggraph(gr) + 
+    geom_edge_link(color='black') + 
+    geom_node_point(aes(fill = shortname,shape=type,size=4)) + 
+    scale_fill_manual(name='',breaks=c('amphibian','bird','invert','mammal','reptile'),values=cols) +
+    scale_shape_manual(values=c(8,24,22,21)) + 
+    theme_economist() + 
+    geom_node_label(aes(label=label),repel = T,label.size=0.5,show.legend = NA) + guides(size=F,shape=F,fill=guide_legend(override.aes = list(shape=21,size=4))) +
+    ggtitle('Heirachery') 
+p2
+```
+
+
+```{r}
+p3<-ggraph(gr,layout='linear',circular=T) + 
+    geom_edge_arc(color='black') + 
+    geom_node_point(aes(fill = shortname,shape=type,size=4)) + 
+    scale_fill_manual(name='',breaks=c('amphibian','bird','invert','mammal','reptile'),values=cols) +
+    scale_shape_manual(values=c(8,24,22,21)) + 
+    theme_economist() + 
+    geom_node_label(aes(label=label),repel = T,label.size=0.5,show.legend = NA) + guides(size=F,shape=F,fill=guide_legend(override.aes = list(shape=21,size=4))) +
+    ggtitle('circle linear - doesnt really tell us much') 
+p3
+```
+```{r}
+ggraph(gr, 'partition',weight=size) + 
+    geom_node_tile(aes(fill = shortname), size = 0.25) + 
+    scale_fill_manual(name='',breaks=c('amphibian','bird','invert','mammal','reptile'),values=cols) + geom_node_text(aes(label=label),label.size=0.5,show.legend = NA) + theme_economist() +  
+  ggtitle('Partition graph') 
+```
+```{r}
+set.seed(1)
+p4<-ggraph(gr,'circlepack',weight=size) + 
+geom_edge_link(color='black') + 
+    geom_node_point(aes(fill = shortname,shape=type,size=4)) + 
+    scale_fill_manual(name='',breaks=c('amphibian','bird','invert','mammal','reptile'),values=cols) +
+    scale_shape_manual(values=c(8,24,22,21)) + 
+    theme_economist() + 
+    geom_node_label(aes(label=label),repel = T,label.size=0.5,show.legend = NA) + guides(size=F,shape=F,fill=guide_legend(override.aes = list(shape=21,size=4))) +
+    ggtitle('Circlepack-without the circles') 
+p4
+```
+```{r}
+ggraph(gr,'treemap',weight=size) + 
+geom_node_tile(aes(fill=shortname)) + 
+    theme_economist() + 
+    geom_node_label(aes(label=label),repel = T,label.size=0.5,show.legend = NA) +
+  scale_fill_manual(name='',breaks=c('amphibian','bird','invert','mammal','reptile'),values=cols) +
+  guides(size=F,shape=F,fill=guide_legend(override.aes = list(shape=21,size=4))) +
+    ggtitle('Weighted Treemap') 
+```
+```{r}
+(p1 + p2) / (p3 + p4) + ggsave('animal_crossings.jpeg',width=10,height=10)
+```
+

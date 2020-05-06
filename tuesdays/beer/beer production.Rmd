@@ -49,6 +49,6 @@ type2<-brewing_materials %>%
 type2
 ```
 ```{r}
-type2 / type1 + plot_layout(heights = c(2,1)) + ggsave('Beer_brewing.pdf',height=5,width=8)
+type2 / type1 + plot_layout(heights = c(2,1)) + ggsave('Beer_brewing.jpeg',height=5,width=8)
 ```
 
