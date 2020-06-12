@@ -1,0 +1,67 @@
+---
+title: "black lives matter"
+output: html_notebook
+---
+
+
+## Set up working space
+
+typical libraries
+```{r}
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(tidytext)
+library(wordcloud2)
+library(lubridate)
+library(ggwaffle)
+```
+get data
+This weeks tidy tuesday, there are multiple datasets to choose from - firsts and science 
+Firsts is the records of african americans breaking the color barrier, science is the achiecements of african americal scientists
+
+```{r}
+firsts <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-06-09/firsts.csv')
+head(firsts)
+```
+
+ 
+playing with word clouds
+
+```{r}
+# convert accomplishment to text
+acc<-firsts %>% 
+     select(accomplishment) %>% unnest_tokens(word,accomplishment) %>% 
+     anti_join(stop_words) %>% 
+     count(word,sort=T) %>% filter(n<400) 
+head(acc)
+```
+I removed the two largest counts to help with visualizing the other words
+```{r}
+postscript(file='african_american_achievements.jpeg')
+wordcloud2(acc, figPath = "/Users/esogin/Desktop/blm.jpg",size = 1.5, color = "#B5D6B2", backgroundColor="#101419")
+dev.off()
+```
+
+timeline of first accomplishments
+```{r}
+# floor dates to decades
+firsts<-firsts %>% 
+          mutate(y=as.Date(as.character(year), format="%Y",origin = lubridate::origin)) %>%
+          mutate(decade=floor_date(y,years(20)))
+firsts.summary<-firsts %>% group_by(gender, decade) %>% count()
+firsts.summary
+```
+```{r}
+waffle_data <- waffle_iron(firsts,sample_size=1,rows=20,aes_d(group = gender))
+p1<-ggplot(waffle_data, aes(x, y, fill = group)) + 
+  geom_waffle(color='black') + 
+  coord_equal() + 
+  scale_fill_manual(values=c(c('#586994','#F00699')),name='') + 
+  theme_waffle() + ylab('') + xlab('') + theme(legend.position = 'bottom', legend.text = element_text(color='white'))+ 
+  theme(plot.background = element_rect(color='black',fill='black'), rect = element_blank()) + 
+  ggtitle(label = 'African American firsts by gender',subtitle='') + 
+  theme(plot.title=element_text(color='white'))
+```
+
+
